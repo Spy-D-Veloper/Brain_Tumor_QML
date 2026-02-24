@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.venv/
+env/
+venv/
+.Python
+
+# Jupyter
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Data and outputs
+dataset/
+preprocessed/
+*.npz
+*.pkl
+*.png
+
+# Logs
+*.log
+
+# Others
+.idea/
+*.swp

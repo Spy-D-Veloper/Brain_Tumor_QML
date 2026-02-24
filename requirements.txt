@@ -1,0 +1,7 @@
+nibabel>=5.0.0
+numpy>=1.22
+scipy
+pandas
+scikit-learn
+matplotlib
+tqdm
