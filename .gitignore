@@ -1,34 +1,58 @@
-# Python
+# Python artifacts
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+*.manifest
+*.spec
 
-# Environment
+# Virtual environment
 .venv/
-env/
 venv/
-.Python
+ENV/
+env/
 
-# Jupyter
-.ipynb_checkpoints
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
 
-# OS
+# macOS
 .DS_Store
+
+# Windows
 Thumbs.db
 
-# VSCode
-.vscode/
-
-# Data and outputs
+# Dataset and results
 dataset/
 preprocessed/
-*.npz
-*.pkl
-*.png
+results/
+results_new/
 
-# Logs
-*.log
-
-# Others
+# IDE and editor
+.vscode/
 .idea/
-*.swp
+*.sublime-project
+*.sublime-workspace
+
+# Logs and temp files
+*.log
+tmp/
+temp/
+
+# Images (binary files should be tracked selectively)
+*.jpeg
+*.jpg
+*.png
+*.gif
+*.bmp
+*.webp
+
+# Python dependency lock files (optional, include if you manage deps differently)
+# Pipenv
+Pipfile.lock
+# poetry
+poetry.lock

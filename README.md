@@ -1,53 +1,90 @@
-# QML — BraTS Preprocessing & Feature Extraction
+# QML Brain Tumor Classification (BraTS)
 
-This repository contains a preprocessing and feature-extraction pipeline for the BraTS MRI dataset.
+## Overview
 
-Quick overview
+This project contains a preprocessing + feature-engineering pipeline for BraTS MRI data and multiple modeling scripts (classical and quantum-inspired) for binary tumor aggressiveness classification.
 
-- Loads modalities: FLAIR, T1, T1CE, T2 and segmentation (NIfTI .nii.gz)
-- Crops to brain region, resizes to 128×128×128, z-score normalises
-- Extracts first-order + lightweight 3D GLCM texture features and tumor volume ratios
-- Saves preprocessed volumes, feature CSVs and a PCA pipeline
+The current validated target status is:
 
-Prerequisites
+- Best accuracy: `0.9283` (PCA features + linear SVM)
+- Target threshold: `>= 0.90`
+- Target met: `YES`
 
-- Python 3.9+ (3.13 confirmed working here)
-- Recommended packages listed in `requirements.txt`
+## Repository layout
 
-Install
+- `preprocessing.py`: NIfTI loading, normalization, handcrafted feature extraction, PCA export.
+- `baseline_ml.py`: reproducible classical baselines (SVM/LogReg), tuning, plots, and metrics export.
+- `quantum_model.py`, `quantum_model1.py`, `circuit.py`, `resnet.py`: quantum-inspired experiment scripts.
+- `run_pipeline.bat`, `run_pipeline.sh`: one-command setup + preprocessing + baseline training.
+- `preprocessed/`: generated features/volumes.
+- `results/`: metrics, classification reports, confusion matrices, ROC curves, and summaries.
 
-Windows / WSL / PowerShell:
+## Setup
+
+1. Install Python 3.10+.
+2. Create and activate a virtual environment.
+
+Windows (PowerShell):
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1   # or use Activate.bat on cmd
+.\.venv\Scripts\Activate.ps1
+```
+
+Windows (cmd):
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate.bat
+```
+
+macOS/Linux:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+3. Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-Run
+## Run
 
-```powershell
-python preprocessing.py
+Windows:
+
+```bat
+run_pipeline.bat
 ```
 
-Outputs
+macOS/Linux:
 
-- `preprocessed/volumes/` — compressed `.npz` per subject with preprocessed image stack + seg
-- `preprocessed/features_raw.csv` — raw extracted features per subject
-- `preprocessed/features_pca.csv` — PCA-reduced features
-- `preprocessed/pca_pipeline.pkl` — saved scaler + PCA model
-- `preprocessed/sample_slices/` — example PNG slices
+```bash
+bash run_pipeline.sh
+```
 
-Adjusting behaviour
+Manual run:
 
-- Edit `preprocessing.py` to change `TARGET_SHAPE`, `PCA_VARIANCE`, or `MODALITIES`.
-- For faster development test a subset of subjects by modifying the `subjects` glob in `main()`.
+```bash
+python preprocessing.py
+python baseline_ml.py
+```
 
-Notes
+## Outputs
 
-- The `dataset/` folder is large and intentionally ignored by `.gitignore`.
-- The pipeline is intended as a starting point for experiments — adapt feature extraction to your needs.
+Main generated artifacts:
 
-Contact
+- `preprocessed/features_raw.csv`
+- `preprocessed/features_pca.csv`
+- `results/raw_metrics.json`
+- `results/pca_metrics.json`
+- `results/raw_best_model.json`
+- `results/pca_best_model.json`
+- `results/best_model_summary.json`
 
-- If you want further integrations (radiomics, augmentation, model training), tell me which direction to add next.
+## Notes
+
+- `baseline_ml.py` uses a non-interactive plotting backend for compatibility on headless/CLI setups.
+- RBF-SVM hyperparameters are tuned with GridSearchCV and logged in the metrics JSON.

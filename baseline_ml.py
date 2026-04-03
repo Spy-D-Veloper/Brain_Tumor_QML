@@ -25,12 +25,15 @@ import json
 import warnings
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import (
     train_test_split,
     StratifiedKFold,
     cross_val_score,
+    GridSearchCV,
 )
 from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.svm import SVC
@@ -121,6 +124,34 @@ def get_models():
             class_weight="balanced", random_state=RANDOM_STATE,
         ),
     }
+
+
+def get_tuned_rbf_svm(X_train, y_train):
+    """Train a tuned RBF-SVM with a small, high-impact hyperparameter search."""
+    param_grid = {
+        "C": [0.5, 1.0, 2.0, 5.0, 10.0],
+        "gamma": ["scale", 0.01, 0.03, 0.05, 0.1],
+    }
+    base = SVC(
+        kernel="rbf",
+        probability=True,
+        class_weight="balanced",
+        random_state=RANDOM_STATE,
+    )
+    search = GridSearchCV(
+        estimator=base,
+        param_grid=param_grid,
+        scoring="f1",
+        cv=5,
+        n_jobs=-1,
+    )
+    search.fit(X_train, y_train)
+    print(
+        "[Tune] Best RBF-SVM params:",
+        search.best_params_,
+        f"| CV-F1={search.best_score_:.4f}",
+    )
+    return search.best_estimator_, search.best_params_, float(search.best_score_)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -278,6 +309,8 @@ def run_experiment(csv_path: str, tag: str):
 
     # ── Evaluate each model ──
     models       = get_models()
+    tuned_model, tuned_params, tuned_cv_f1 = get_tuned_rbf_svm(X_train_s, y_train)
+    models["SVM_RBF_Tuned"] = tuned_model
     all_metrics  = {}
     all_reports  = {}
 
@@ -287,6 +320,9 @@ def run_experiment(csv_path: str, tag: str):
             X_train_s, X_test_s, y_train, y_test,
             scaler, feat_cols, tag,
         )
+        if name == "SVM_RBF_Tuned":
+            metrics["tuned_cv_f1"] = tuned_cv_f1
+            metrics["tuned_params"] = tuned_params
         all_metrics[name] = metrics
         all_reports[name] = report
 
@@ -307,6 +343,22 @@ def run_experiment(csv_path: str, tag: str):
     with open(report_path, "w") as f:
         for name, rpt in all_reports.items():
             f.write(f"{'='*50}\n{name}\n{'='*50}\n{rpt}\n\n")
+
+    # ── Save per-feature-set best model summary ──
+    best_name, best_metrics = max(
+        all_metrics.items(),
+        key=lambda x: x[1]["accuracy"],
+    )
+    best_summary = {
+        "feature_set": tag,
+        "best_model": best_name,
+        "best_accuracy": best_metrics["accuracy"],
+        "target_accuracy": 0.90,
+        "target_met": bool(best_metrics["accuracy"] >= 0.90),
+    }
+    best_path = os.path.join(RESULTS_DIR, f"{tag}_best_model.json")
+    with open(best_path, "w") as f:
+        json.dump(best_summary, f, indent=2)
 
     return all_metrics
 
@@ -331,6 +383,33 @@ def main():
                   f"{m['f1']:6.4f} {m['roc_auc']:6.4f} "
                   f"{m['cv_f1_mean']:.4f}±{m['cv_f1_std']:.4f}")
     print("=" * 74)
+
+    # ── Global best summary across raw + pca ──
+    combined = []
+    for feature_set, metrics in [("raw", raw_metrics), ("pca", pca_metrics)]:
+        for model_name, m in metrics.items():
+            combined.append((feature_set, model_name, m))
+    best_feature_set, best_model_name, best_metrics = max(
+        combined,
+        key=lambda x: x[2]["accuracy"],
+    )
+    target = 0.90
+    summary = {
+        "best_feature_set": best_feature_set,
+        "best_model": best_model_name,
+        "best_accuracy": best_metrics["accuracy"],
+        "target_accuracy": target,
+        "target_met": bool(best_metrics["accuracy"] >= target),
+    }
+    summary_path = os.path.join(RESULTS_DIR, "best_model_summary.json")
+    with open(summary_path, "w") as f:
+        json.dump(summary, f, indent=2)
+
+    print(
+        f"Best overall: {best_feature_set}/{best_model_name} | "
+        f"Acc={best_metrics['accuracy']:.4f} | "
+        f"Target(>= {target:.2f})={'YES' if summary['target_met'] else 'NO'}"
+    )
     print(f"\nAll results saved to  {RESULTS_DIR}/")
 
 

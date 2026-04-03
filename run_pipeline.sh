@@ -7,3 +7,4 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 python preprocessing.py
+python baseline_ml.py
